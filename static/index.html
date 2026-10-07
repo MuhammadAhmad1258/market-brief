@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Market Brief — Company research, with sources</title>
+  <meta name="description" content="Explore company financials and daily prices with a concise, evidence-linked research brief.">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Market Brief home"><span class="brand-mark">mb.</span><span>Market Brief</span></a>
+    <span class="top-note">COMPANY RESEARCH</span>
+    <a class="quiet-link" href="#methodology">How to read this</a>
+  </header>
+  <main>
+    <section class="research-controls" aria-labelledby="research-title">
+      <div class="control-heading"><div><p class="eyebrow">THE RESEARCH DESK</p><h1 id="research-title">Start with the evidence.</h1></div>
+        <div class="mode-control" role="group" aria-label="Research mode"><button type="button" id="demo-mode" class="mode active" aria-pressed="true">Sample demo</button><button type="button" id="live-mode" class="mode" aria-pressed="false">Live research</button></div>
+      </div>
+      <form id="research-form">
+        <label for="ticker">U.S. company ticker</label>
+        <div class="input-row"><div class="ticker-wrap"><span aria-hidden="true" class="search-icon">⌕</span><input id="ticker" name="ticker" value="NVDA" maxlength="12" pattern="[A-Za-z][A-Za-z0-9.\-]{0,11}" autocomplete="off" spellcheck="false" required placeholder="e.g. NVDA"></div><button class="primary-button" id="analyze-button" type="submit">Research company</button></div>
+      </form>
+      <div class="try-row"><span>Try an example</span><button type="button" class="ticker-chip" data-ticker="NVDA">NVDA <span>NVIDIA</span></button><button type="button" class="ticker-chip" data-ticker="AAPL">AAPL <span>Apple</span></button><button type="button" class="ticker-chip" data-ticker="MSFT">MSFT <span>Microsoft</span></button></div>
+      <p id="mode-note" class="mode-note">Illustrative demo. Prices and financials are invented examples.</p>
+    </section>
+
+    <div id="error-box" class="error-box" role="alert" hidden></div>
+    <div id="loading" class="loading" role="status" hidden><span class="spinner" aria-hidden="true"></span><div><strong>Preparing your research brief</strong><p>Collecting available records, calculating metrics and checking references.</p></div></div>
+
+    <section id="results" aria-label="Company research results" aria-busy="false" hidden>
+      <div class="company-heading"><div><div class="company-kicker"><span id="result-ticker" class="ticker-label"></span><span id="result-industry"></span></div><h2 id="company-name"></h2></div><div class="report-actions"><span id="generation-badge" class="badge"></span><button type="button" id="download-button" class="secondary-button">Download brief</button></div></div>
+      <div id="sample-banner" class="sample-banner" hidden><strong>SAMPLE DATA</strong><span>Illustrative dataset, not real company prices or financial statements.</span></div>
+
+      <div class="workspace-grid">
+        <div class="market-column">
+          <section class="card price-card" aria-labelledby="price-title">
+            <div class="section-top"><h3 id="price-title">Price overview</h3><span id="price-date" class="metadata"></span></div>
+            <div class="quote-line"><span id="close-price" class="quote"></span><span id="daily-change" class="change"></span></div>
+            <div class="chart-header"><span id="chart-window" class="metadata"></span><div class="range-control" role="group" aria-label="Chart range"><button type="button" class="range" data-range="22" aria-pressed="false">1M</button><button type="button" class="range active" data-range="64" aria-pressed="true">3M</button></div></div>
+            <div id="chart" class="chart"></div>
+            <p id="chart-reading" class="chart-reading"></p>
+            <div class="price-stats"><div><span>21-session change</span><strong id="month-change"></strong></div><div><span>Annualized volatility</span><strong id="volatility"></strong></div><div><span>Latest volume</span><strong id="volume"></strong></div></div>
+            <p class="data-note">Daily, unadjusted closes. Splits and dividends can affect these price changes.</p>
+          </section>
+          <section class="card financial-card" aria-labelledby="financial-title"><div class="section-top"><h3 id="financial-title">Annual financials</h3><span class="metadata">USD</span></div><p id="financial-period" class="data-note"></p><div id="financial-metrics" class="financial-grid"></div><p id="net-margin" class="margin-note"></p></section>
+          <section class="card filing-card" aria-labelledby="filings-title"><div class="section-top"><h3 id="filings-title">Recent filings</h3><span class="metadata">SEC</span></div><div id="filings"></div></section>
+        </div>
+
+        <aside class="brief-column" aria-labelledby="brief-title">
+          <section class="brief-intro"><p class="eyebrow">RESEARCH BRIEF</p><h3 id="brief-title">The company, in context.</h3><div id="brief-overview" class="claim-list"></div></section>
+          <section class="brief-section"><div class="brief-section-heading"><span class="section-symbol positive" aria-hidden="true">+</span><h4>What supports the case</h4></div><div id="brief-strengths" class="claim-list"></div></section>
+          <section class="brief-section"><div class="brief-section-heading"><span class="section-symbol caution" aria-hidden="true">−</span><h4>What needs a closer look</h4></div><div id="brief-risks" class="claim-list"></div></section>
+          <section class="brief-section watch-section"><div class="brief-section-heading"><span class="section-symbol" aria-hidden="true">?</span><h4>Questions for your next read</h4></div><div id="brief-watch" class="claim-list"></div></section>
+          <p id="report-timestamp" class="metadata report-timestamp"></p>
+        </aside>
+      </div>
+
+      <section class="sources-section" aria-labelledby="sources-title"><div class="sources-heading"><div><p class="eyebrow">FOLLOW THE EVIDENCE</p><h3 id="sources-title">Sources & data notes</h3></div><span id="sources-count" class="metadata"></span></div><div id="sources" class="source-grid"></div><details class="notes-details"><summary>Coverage & limitations</summary><ul id="warnings"></ul><p id="audit-note"></p></details></section>
+    </section>
+
+    <details id="methodology" class="methodology"><summary>How to read a Market Brief</summary><div class="methodology-content"><p>Start with the metric dates. Annual financials describe a full fiscal year; the chart shows the latest available daily closes. They are different windows of time.</p><p>Numbers are calculated from provider records. Commentary is labelled as an observation, interpretation or research question. Source checks confirm that references exist; they do not guarantee that an interpretation is correct.</p><p>Sample mode uses invented data and a rule-based brief. Live mode uses SEC records and Alpha Vantage daily prices; Groq writes commentary when configured. Missing data stays missing.</p><p>This app supports research. It does not forecast returns or make trading decisions.</p></div></details>
+    <footer><span class="footer-brand">Market Brief</span><span>Built by Saith Ahmad</span><span>Evidence first. Your judgment next.</span></footer>
+  </main>
+  <div id="announcement" class="sr-only" aria-live="polite"></div>
+</body>
+</html>
