@@ -26,7 +26,7 @@ class Source(BaseModel):
 
 class Claim(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    text: str = Field(description="Short qualitative sentence. No digits, prices or percentages.")
+    text: str = Field(description="Clear, informative sentence synthesizing key insights. Grounded directly in the provided evidence.")
     source_ids: list[str] = Field(description="One or more IDs from the supplied evidence, never URLs.")
     kind: Literal["fact", "interpretation", "question"]
 

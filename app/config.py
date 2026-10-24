@@ -24,7 +24,8 @@ class Settings:
     @property
     def live_ready(self) -> bool:
         # SEC asks automated clients to identify their app and contact email.
-        return bool(self.alpha_vantage_api_key and "@" in self.sec_user_agent)
+        # Market data is supplied by yfinance (with Alpha Vantage as optional fallback).
+        return bool("@" in self.sec_user_agent)
 
 
 settings = Settings()

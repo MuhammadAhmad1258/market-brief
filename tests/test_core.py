@@ -76,7 +76,7 @@ def test_citations_and_number_guard():
     assert citation_errors(brief, {"D1"}) == []
     bad = copy.deepcopy(brief)
     bad.overview[0].source_ids = ["IMAGINARY"]
-    bad.overview[0].text = "Revenue grew 999%."
+    bad.overview[0].text = "Revenue grew at https://fake-url.com."
     assert len(citation_errors(bad, {"D1"})) >= 2
 
 

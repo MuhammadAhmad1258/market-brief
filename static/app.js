@@ -86,15 +86,20 @@ function renderClaims(id, claims, report) {
   const ids = new Set(report.sources.map((source) => source.id));
   for (const claim of claims) {
     const wrapper = node("div", "claim");
-    wrapper.append(node("p", "", claim.text));
+    wrapper.append(node("p", "claim-text", claim.text));
     const meta = node("div", "claim-meta");
-    meta.append(node("span", "claim-kind", claim.kind === "fact" ? "Observation" : claim.kind));
-    for (const id of claim.source_ids) {
-      if (!ids.has(id)) continue;
-      const citation = node("a", "citation", id);
-      citation.href = `#source-${id}`;
-      citation.setAttribute("aria-label", `Read source ${id}`);
-      meta.append(citation);
+    const kindLabel = claim.kind === "fact" ? "Fact" : (claim.kind === "interpretation" ? "Analysis" : "Key Question");
+    meta.append(node("span", `claim-kind kind-${claim.kind}`, kindLabel));
+    if (claim.source_ids && claim.source_ids.length > 0) {
+      const citeGroup = node("span", "citation-group");
+      for (const id of claim.source_ids) {
+        if (!ids.has(id)) continue;
+        const citation = node("a", "citation", id);
+        citation.href = `#source-${id}`;
+        citation.setAttribute("aria-label", `Read source ${id}`);
+        citeGroup.append(citation);
+      }
+      meta.append(citeGroup);
     }
     wrapper.append(meta);
     container.append(wrapper);
@@ -105,6 +110,9 @@ function render(report) {
   $("result-ticker").textContent = report.company.ticker;
   $("result-industry").textContent = report.company.industry;
   $("company-name").textContent = report.company.name;
+  if ($("brief-title")) {
+    $("brief-title").textContent = `${report.company.name} (${report.company.ticker}) Research Brief`;
+  }
   $("sample-banner").hidden = report.mode !== "demo";
   $("generation-badge").textContent = { demo: "Sample · rule-based", groq: "Groq commentary", facts_only: "Rule-based brief" }[report.generation];
   const market = report.market;

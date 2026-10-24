@@ -83,12 +83,17 @@ h3 { font-size:1rem; font-weight:600; margin:0; }
 .empty-note { color:var(--muted); font-size:.875rem; line-height:1.5; }
 .brief-column { border-top:3px solid var(--ink); padding:25px 4px 0; }
 .brief-intro h3 { font-family:Georgia,serif; font-size:1.8rem; line-height:1.25; font-weight:400; margin-bottom:16px; }
-.claim-list { display:grid; gap:17px; }
-.claim { font-size:.9375rem; line-height:1.65; }
-.claim p { margin:0; }
-.claim-meta { display:flex; align-items:center; gap:6px; margin-top:7px; flex-wrap:wrap; }
-.claim-kind { font-size:.6875rem; color:var(--muted); letter-spacing:.04em; text-transform:uppercase; margin-right:5px; }
-.citation { font-size:.75rem; font-weight:600; text-decoration:none; padding:1px 6px; border:1px solid #c4d7ca; border-radius:3px; background:#edf4ef; }
+.claim-list { display:grid; gap:14px; }
+.claim { font-size:.9375rem; line-height:1.6; padding:10px 14px; border-radius:8px; background:rgba(0,0,0,0.015); border:1px solid rgba(0,0,0,0.04); }
+.claim p { margin:0 0 7px 0; }
+.claim-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.claim-kind { font-size:.6875rem; font-weight:600; letter-spacing:.03em; text-transform:uppercase; padding:2px 7px; border-radius:4px; }
+.claim-kind.kind-fact { background:#e8f4ed; color:#1b6338; }
+.claim-kind.kind-interpretation { background:#e8effa; color:#235496; }
+.claim-kind.kind-question { background:#fef4e6; color:#9c5513; }
+.citation-group { display:inline-flex; align-items:center; gap:5px; }
+.citation { font-size:.72rem; font-weight:600; text-decoration:none; padding:2px 7px; border:1px solid #c4d7ca; border-radius:4px; background:#f4f8f5; color:var(--green); transition:all 0.15s ease; }
+.citation:hover { background:var(--green); color:white; border-color:var(--green); }
 .brief-section { margin-top:24px; padding-top:24px; border-top:1px solid var(--line); }
 .brief-section-heading { display:flex; align-items:center; gap:9px; margin-bottom:17px; }
 .brief-section h4 { margin:0; font-size:1rem; font-weight:600; }
