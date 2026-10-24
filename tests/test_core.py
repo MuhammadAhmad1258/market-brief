@@ -1,5 +1,9 @@
 import asyncio
 import copy
+import pytest
+import sys
+from datetime import datetime
+from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 from app.config import Settings
@@ -7,6 +11,39 @@ from app.demo import demo_bundle
 from app.finance import extract_annual_facts, market_metrics, net_margin
 from app.main import app
 from app.workflow import citation_errors, create_workflow, fallback_brief
+
+
+def test_yfinance_prices_survive_parsing(monkeypatch):
+    from app.sources import DataTools
+
+    class History:
+        empty = False
+
+        def iterrows(self):
+            yield datetime(2026, 1, 2), {"Close": 123.45, "Volume": 1000}
+            yield datetime(2026, 1, 5), {"Close": float("nan"), "Volume": 0}
+            yield datetime(2026, 1, 6), {"Close": 125.5, "Volume": float("nan")}
+
+    class Ticker:
+        info = {"shortName": "Example", "regularMarketPrice": 126.75,
+                "regularMarketTime": 1767722400, "currency": "USD"}
+
+        def history(self, **kwargs):
+            assert kwargs == {"period": "6mo", "interval": "1d", "auto_adjust": False, "timeout": 15}
+            return History()
+
+    monkeypatch.setitem(sys.modules, "yfinance", SimpleNamespace(Ticker=lambda ticker: Ticker()))
+    tools = DataTools(Settings(alpha_vantage_api_key=""))
+    prices = asyncio.run(tools.market_data("NVDA"))
+    assert prices == [
+        {"date": "2026-01-02", "close": 123.45, "volume": 1000},
+        {"date": "2026-01-06", "close": 125.5, "volume": 0},
+    ]
+    assert tools.company_profiles["NVDA"]["name"] == "Example"
+    quote = tools.company_profiles["NVDA"]["quote"]
+    assert quote["price"] == 126.75
+    assert quote["as_of"].endswith("+00:00")
+    assert quote["currency"] == "USD"
 
 
 def test_demo_api():
@@ -107,3 +144,37 @@ def test_valid_model_shape():
     result = asyncio.run(graph.ainvoke({"ticker":"NVDA","mode":"live"}))
     assert result["generation"] == "groq"
     assert len(result["trace"]) == 4
+
+
+@pytest.mark.parametrize("ticker", ["TSLA", "AMZN", "AMD"])
+def test_quote_only_report_and_cache(monkeypatch, ticker):
+    from app import main
+    from app.sources import DataTools, DataUnavailable
+
+    tools = DataTools(Settings(alpha_vantage_api_key=""))
+    quote = {"price": 126.75, "as_of": "2026-01-06T15:20:00+00:00",
+             "currency": "USD", "provider": "Yahoo Finance", "session": "regular"}
+
+    async def no_financials(ticker):
+        raise DataUnavailable("SEC unavailable")
+
+    def fetch(requested_ticker):
+        assert requested_ticker == ticker
+        return [], {"quote": quote}
+
+    monkeypatch.setattr(tools, "company_data", no_financials)
+    monkeypatch.setattr(tools, "_fetch_yfinance", fetch)
+    config = Settings(sec_user_agent="MarketBrief test@example.com", groq_api_key="")
+    monkeypatch.setattr(main, "settings", config)
+    monkeypatch.setattr(main, "graph", create_workflow(config, tools))
+    monkeypatch.setattr(main, "report_cache", {})
+    client = TestClient(app)
+    response = client.post("/api/analyze", json={"ticker": ticker, "mode": "live"})
+    assert response.status_code == 200
+    report = response.json()
+    assert report["quote"] == quote
+    assert report["prices"] == []
+    assert report["sources"][0]["id"] == "Q1"
+    import time
+    assert 0 < main.report_cache[(ticker, "live")][0] - time.monotonic() <= 60
+    assert client.post("/api/analyze", json={"ticker": ticker, "mode": "live"}).json()["cached"]

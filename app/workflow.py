@@ -43,7 +43,7 @@ def fallback_brief(bundle: dict) -> Brief:
     cash = facts.get("operating_cash_flow")
     has_financials = any(facts.values())
     overview_text = ("This brief summarizes the available annual financial records. Price history, when available, covers a different time window."
-                     if has_financials else "Only daily closing-price observations were returned. Company financial records are unavailable.")
+                     if has_financials else "Only market-price data was returned. Company financial records are unavailable.")
     overview = [claim(overview_text, kind="fact")]
     strengths, risks = [], []
     if revenue and revenue.get("yoy_pct") is not None:

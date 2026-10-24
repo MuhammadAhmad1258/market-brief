@@ -2,6 +2,7 @@
 
 import asyncio
 import copy
+import math
 import time
 from datetime import datetime, timezone
 
@@ -62,7 +63,7 @@ class DataTools:
             warnings.simplefilter("ignore")
             import yfinance as yf
             t = yf.Ticker(ticker)
-            hist = t.history(period="6mo", interval="1d")
+            hist = t.history(period="6mo", interval="1d", auto_adjust=False, timeout=15)
             prices = []
             if not hist.empty:
                 for idx, row in hist.iterrows():
@@ -82,15 +83,28 @@ class DataTools:
                     "market_cap": info.get("marketCap"),
                     "trailing_pe": info.get("trailingPE"),
                 }
+                price, stamp = info.get("regularMarketPrice"), info.get("regularMarketTime")
+                if (isinstance(price, (int, float)) and math.isfinite(price) and price > 0
+                        and isinstance(stamp, (int, float)) and math.isfinite(stamp)):
+                    profile["quote"] = {
+                        "price": price,
+                        "as_of": datetime.fromtimestamp(stamp, timezone.utc).isoformat(),
+                        "currency": info.get("currency") or "USD",
+                        "provider": "Yahoo Finance",
+                        "session": "regular",
+                    }
             except Exception:
                 pass
             return prices, profile
 
     async def market_data(self, ticker: str) -> list[dict]:
-        # 1. Try yfinance first (no daily call limit, fast & reliable)
+        # Discard an older quote before attempting a new provider request.
+        if hasattr(self, "company_profiles"):
+            self.company_profiles.pop(ticker, None)
+        # Try Yahoo first; availability and rate limits depend on the provider.
         try:
             prices, profile = await asyncio.to_thread(self._fetch_yfinance, ticker)
-            if prices:
+            if prices or profile.get("quote"):
                 if not hasattr(self, "company_profiles"):
                     self.company_profiles = {}
                 self.company_profiles[ticker] = profile
@@ -161,6 +175,7 @@ class DataTools:
             self.company_data(ticker), self.market_data(ticker), return_exceptions=True
         )
         warnings = []
+        quote = getattr(self, "company_profiles", {}).get(ticker, {}).get("quote")
         if isinstance(company_result, Exception):
             if not isinstance(company_result, DataUnavailable):
                 raise DataUnavailable("Company financial records could not be parsed. Try the sample demo.") from None
@@ -170,6 +185,12 @@ class DataTools:
         if isinstance(prices_result, Exception):
             warnings.append(str(prices_result) if isinstance(prices_result, DataUnavailable) else "Daily prices could not be parsed.")
             prices_result = []
+        if quote:
+            company_result["sources"].append(Source(id="Q1", title="Yahoo Finance latest regular-session quote",
+                url=f"https://finance.yahoo.com/quote/{ticker}", as_of=quote["as_of"], kind="market",
+                excerpt=f"Latest reported regular-session price: {quote['price']} {quote['currency']}. May be delayed; not a real-time feed.").model_dump())
+        else:
+            warnings.append("Latest quote unavailable; displaying the daily close when available.")
         if not prices_result and not company_result["sources"]:
             raise DataUnavailable("No live data could be retrieved. " + " ".join(warnings))
         if prices_result:
@@ -196,4 +217,4 @@ class DataTools:
         warnings.append("Prices are end-of-day, unadjusted for splits and dividends; price changes are not total investment returns.")
         if any(company_result["facts"].get(k) is None for k in ["revenue", "net_income", "eps", "operating_cash_flow"]):
             warnings.append("Some standard U.S.-GAAP annual metrics are unavailable; custom tags and IFRS-only filings are not handled in V1.")
-        return {**company_result, "prices": prices_result, "warnings": warnings}
+        return {**company_result, "prices": prices_result, "quote": quote, "warnings": warnings}

@@ -76,7 +76,7 @@ def public_config():
 @app.post("/api/analyze")
 async def analyze(payload: AnalyzeRequest, request: Request):
     if payload.mode == "live" and not settings.live_ready:
-        raise HTTPException(503, "Live research needs ALPHA_VANTAGE_API_KEY and SEC_USER_AGENT with a contact email on the server. The sample demo is available now.")
+        raise HTTPException(503, "Live research needs SEC_USER_AGENT with a contact email on the server. The sample demo is available now.")
     cache_key = (payload.ticker, payload.mode)
     started = time.monotonic()
     # Single-process, small-app cache: no database, no hidden persistence.
@@ -103,12 +103,13 @@ async def analyze(payload: AnalyzeRequest, request: Request):
         result = {
             "company": bundle["company"], "mode": payload.mode,
             "generation": state["generation"], "market": state["market"],
-            "prices": bundle["prices"], "facts": bundle["facts"], "net_margin_pct": state["margin"],
+            "quote": bundle.get("quote"), "prices": bundle["prices"], "facts": bundle["facts"], "net_margin_pct": state["margin"],
             "brief": state["brief"].model_dump(), "sources": bundle["sources"],
             "filings": bundle["filings"], "warnings": state["warnings"], "trace": state["trace"],
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "elapsed_ms": round((time.monotonic() - started) * 1000), "cached": False,
             "audit": "Citation identifiers and output format checked. Interpretations are not independently fact-verified.",
         }
-        report_cache[cache_key] = (time.monotonic() + settings.cache_seconds, result)
+        report_ttl = min(settings.cache_seconds, 60) if payload.mode == "live" else settings.cache_seconds
+        report_cache[cache_key] = (time.monotonic() + report_ttl, result)
         return result

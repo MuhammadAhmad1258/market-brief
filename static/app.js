@@ -21,7 +21,7 @@ function safeLink(href) {
   try {
     const url = new URL(href, location.origin);
     if (url.origin === location.origin && url.pathname === "/static/demo-note.txt") return url.href;
-    if (url.protocol === "https:" && ["www.sec.gov", "data.sec.gov", "www.alphavantage.co"].includes(url.hostname)) return url.href;
+    if (url.protocol === "https:" && ["www.sec.gov", "data.sec.gov", "www.alphavantage.co", "finance.yahoo.com"].includes(url.hostname)) return url.href;
   } catch (_) { /* Invalid provider URL: no link is created. */ }
   return null;
 }
@@ -34,8 +34,8 @@ function setMode(nextMode) {
     $(`${key}-mode`).setAttribute("aria-pressed", String(mode === key));
   }
   $("mode-note").textContent = mode === "demo"
-    ? "Illustrative demo. Prices and financials are invented examples."
-    : "Live research uses end-of-day prices and annual company records. Availability depends on configured providers.";
+    ? "Sample mode supports NVDA, AAPL and MSFT with invented data. Select Live research for other stock symbols."
+    : "Live research uses the latest available regular-session quote, daily history and annual company records. Quotes may be delayed. Availability depends on configured providers.";
   $("error-box").hidden = true;
   // Don't leave a sample result visible under a newly selected live-mode label.
   $("results").hidden = true;
@@ -116,9 +116,14 @@ function render(report) {
   $("sample-banner").hidden = report.mode !== "demo";
   $("generation-badge").textContent = { demo: "Sample · rule-based", groq: "Groq commentary", facts_only: "Rule-based brief" }[report.generation];
   const market = report.market;
-  $("close-price").textContent = money(market.close);
-  $("price-date").textContent = market.as_of ? `Close · ${market.as_of}` : "No prices available";
-  $("daily-change").textContent = market.daily_change_pct != null ? `${pct(market.daily_change_pct)} daily` : "";
+  const quote = report.quote;
+  $("close-price").textContent = quote
+    ? new Intl.NumberFormat("en-US", { style: "currency", currency: quote.currency }).format(quote.price)
+    : money(market.close);
+  $("price-date").textContent = quote
+    ? `Latest regular-session quote · ${new Date(quote.as_of).toLocaleString()} · may be delayed`
+    : market.as_of ? `${report.mode === "demo" ? "Sample close" : "Daily close"} · ${market.as_of}` : "No prices available";
+  $("daily-change").textContent = market.daily_change_pct != null ? `${pct(market.daily_change_pct)} close-to-close` : "";
   $("daily-change").classList.toggle("negative", market.daily_change_pct < 0);
   $("month-change").textContent = pct(market.month_change_pct);
   $("month-change").classList.toggle("negative", market.month_change_pct < 0);
@@ -216,6 +221,7 @@ function downloadBrief() {
   const r = currentReport;
   const lines = [`# ${r.company.name} (${r.company.ticker}) — Market Brief`, ``, `Mode: ${r.mode}. Commentary: ${r.generation}.`, `Prepared: ${r.generated_at}`, ""];
   if (r.mode === "demo") lines.push("SAMPLE DATA: invented examples, not actual market data.", "");
+  if (r.quote) lines.push(`Latest regular-session quote: ${r.quote.price} ${r.quote.currency} (${r.quote.as_of}); may be delayed.`, "");
   lines.push(`Latest available close: ${money(r.market.close)} (${r.market.as_of || "unavailable"})`, "");
   for (const [key, fact] of Object.entries(r.facts)) if (fact) lines.push(`${key}: ${fact.value} ${fact.unit} · ${fact.start} to ${fact.end}`);
   for (const section of ["overview", "strengths", "risks", "watch"]) {
