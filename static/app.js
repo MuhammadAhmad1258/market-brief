@@ -1,4 +1,3 @@
-// Plain JavaScript: form -> Python API -> render the response. No frontend framework.
 const $ = (id) => document.getElementById(id);
 let mode = "demo";
 let currentReport = null;
@@ -247,5 +246,4 @@ document.querySelectorAll(".range").forEach((button) => button.addEventListener(
   document.querySelectorAll(".range").forEach((b) => { const active = b === button; b.classList.toggle("active", active); b.setAttribute("aria-pressed", String(active)); });
   renderChart();
 }));
-// A useful first screen, without making any external API or model call.
 analyze();

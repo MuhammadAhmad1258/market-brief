@@ -1,4 +1,4 @@
-"""Financial calculations are Python's job, not the language model's."""
+"""Financial-period alignment and market metrics."""
 
 import math
 import statistics

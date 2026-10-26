@@ -1,4 +1,4 @@
-"""All configuration lives here. Keys are read on the server, never in JavaScript."""
+"""Server configuration loaded from environment variables."""
 
 import os
 from dataclasses import dataclass

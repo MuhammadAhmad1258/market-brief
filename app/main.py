@@ -1,4 +1,4 @@
-"""The web server: serve the frontend, validate inputs, run the graph, return JSON."""
+"""FastAPI routes, request limits and report caching."""
 
 import asyncio
 import copy

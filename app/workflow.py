@@ -1,4 +1,4 @@
-"""Four readable LangGraph nodes, with one bounded repair attempt."""
+"""Research workflow with citation validation and one repair attempt."""
 
 from __future__ import annotations
 
